@@ -11,7 +11,7 @@ import requests
 from bs4 import BeautifulSoup
 from typing import AbstractSet
 
-from ros_answers_miner.models import Question, Answer, Comment, User
+from models import Question, Answer, Comment, User
 
 
 def build_link(url: str) -> str:
@@ -197,5 +197,4 @@ def url_to_question(url: str) -> Question:
 
     question = Question(url, date, votes, views, user, title, content, tags,
                         comments, answers)
-    print(question)
     return question
