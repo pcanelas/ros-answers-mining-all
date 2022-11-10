@@ -58,12 +58,17 @@ if __name__ == '__main__':
         
         for link in all_questions:
             print(link)
-            question = url_to_question(link)
-            questions.append(url_to_question(link))
-
             url_id = link.split('/')[4]
-        
-            with open(f'data/question_{url_id}.pkl', 'wb') as outp:
-                pickle.dump(question, outp, pickle.HIGHEST_PROTOCOL)
+            try:
+                question = url_to_question(link)
+                questions.append(url_to_question(link))
+
+                with open(f'data/question_{url_id}.pkl', 'wb') as outp:
+                    pickle.dump(question, outp, pickle.HIGHEST_PROTOCOL)
+                
+                time.sleep(1)
+            except Exception as e:
+                # Save a file called url_id.txt with the error
+                with open(f'data/question_{url_id}.txt', 'w') as outp:
+                    outp.write(str(e))
             
-            time.sleep(1)
