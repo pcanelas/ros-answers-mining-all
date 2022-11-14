@@ -1,27 +1,41 @@
+# -*- coding: utf-8 -*-
 from ros_answers_miner.parser import url_to_question
+# Import the necessary libraries
 
 from bs4 import BeautifulSoup
 
+import pickle
 import time
 import requests
-import pickle 
 
 from pathlib import Path
 
 # Obtain the 50 links from the page link
 def get_questions(page_link):
     
-    soup = BeautifulSoup(requests.get(page_link).content, 'html.parser')
+    try_get_questions = True
     
-    # Get all the links of questions from the page
-    question_list = soup.find('div', {'id': 'question-list'})
+    while try_get_questions:
+        try:
+            soup = BeautifulSoup(requests.get(page_link).content, 'html.parser')
+            
+            # Get all the links of questions from the page
+            question_list = soup.find('div', {'id': 'question-list'})
 
-    # From the question list, get all the questions links
-    links = [link.find('a')['href'] for link in  question_list.find_all('h2')]
+            # From the question list, get all the questions links
+            links = [link.find('a')['href'] for link in  question_list.find_all('h2')]
 
-    # Append the ros answers link to each link
-    links = [f'https://answers.ros.org{link}' for link in links]
+            # Append the ros answers link to each link
+            links = [f'https://answers.ros.org{link}' for link in links]
 
+            try_get_questions = False
+
+        # Catch the NewConnectionError exception
+        except requests.exceptions.NewConnectionError:
+            # Sleep for 3 minutes to prevent the connection error
+            time.sleep(180)
+            continue
+    
     return links
 
 def get_page_limit(url):
@@ -54,19 +68,32 @@ if __name__ == '__main__':
         # Each question is a link
         all_questions = get_questions(f'{URL}/page:{i}/')
         
-        for link in all_questions:
-            print(link)
-            url_id = link.split('/')[4]
-            try:
-                question = url_to_question(link)
+        questions_page = list()
 
-                with open(f'data/question_{url_id}.pkl', 'wb') as outp:
-                    pickle.dump(question, outp, pickle.HIGHEST_PROTOCOL)
+        for link in all_questions:
+            print(f'Parsing {link}')
+
+            try_get_question = True
+
+            while try_get_question:
+                try:
+                    question = url_to_question(link)
+                    questions_page.append(question)
+
+                    try_get_question = False
                 
-                time.sleep(1)
+                except requests.exceptions.NewConnectionError:
+                    time.sleep(180)
                 
-            except Exception as e:
-                # Save a file called url_id.txt with the error
-                with open(f'data/question_{url_id}.txt', 'w') as outp:
-                    outp.write(str(e))
-            
+                except Exception:
+                    # Write to a text file the link of the question that failed
+                    with open('data/failed_questions.txt', 'a') as f:
+                        f.write(f'{link}')
+                        try_get_question = False
+                    
+        # Save the questions_page list to a pickle file in data dir
+        with open(f'data/questions_page_{i}.pkl', 'wb') as f:
+            pickle.dump(questions_page, f)
+
+        # Sleep for 0.5 second
+        time.sleep(0.5)
