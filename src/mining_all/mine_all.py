@@ -30,8 +30,8 @@ def get_questions(page_link):
 
             try_get_questions = False
 
-        # Catch the NewConnectionError exception
-        except requests.exceptions.NewConnectionError:
+        # Catch the ConnectionError exception
+        except requests.exceptions.ConnectionError:
             # Sleep for 3 minutes to prevent the connection error
             time.sleep(180)
             continue
@@ -82,7 +82,7 @@ if __name__ == '__main__':
 
                     try_get_question = False
                 
-                except requests.exceptions.NewConnectionError:
+                except requests.exceptions.ConnectionError:
                     time.sleep(180)
                 
                 except Exception:
